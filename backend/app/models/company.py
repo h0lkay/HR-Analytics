@@ -54,7 +54,7 @@ class Employee(Base):
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"))
     department_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("departments.id"))
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
-    position: Mapped[str] = mapped_column(String(255))
+    role: Mapped[str] = mapped_column(String(255))
     hire_date: Mapped[date] = mapped_column(Date)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
