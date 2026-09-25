@@ -1,7 +1,6 @@
 from typing import Optional
-from pydantic import BaseModel, field_validator, ConfigDict
+from pydantic import BaseModel, field_validator, ConfigDict, EmailStr
 import re
-from pydantic.v1 import EmailStr
 
 FORBIDDEN_PASSWORD_PATTERNS = [r'^1234567890',
                                r'^qwerty',

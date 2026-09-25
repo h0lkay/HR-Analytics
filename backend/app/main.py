@@ -1,5 +1,5 @@
 from fastapi import FastAPI, status
-from app.api.v1.router import api_router
+from app.api.router import api_router
 import uvicorn
 
 app = FastAPI()
