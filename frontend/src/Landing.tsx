@@ -75,10 +75,13 @@ function Header() {
           <a href="#analytics" onClick={closeMenu}>
             Аналитика
           </a>
+          <a href="/login" onClick={closeMenu}>
+            Войти
+          </a>
         </nav>
 
-        <a className="button button-small header-button" href="#demo">
-          Попробовать
+        <a className="button button-small header-button" href="/register">
+          Регистрация
         </a>
 
         <button
@@ -137,7 +140,7 @@ function Landing() {
             </p>
 
             <div className="hero-actions">
-              <a className="button" href="#demo">
+              <a className="button" href="/register">
                 Попробовать платформу <ArrowRight size={18} />
               </a>
               <a className="button button-secondary" href="#modules">
@@ -336,7 +339,7 @@ function Landing() {
           </div>
           <a
             className="button button-light"
-            href="mailto:hr-analytics@example.com"
+            href="/register"
           >
             Попробовать платформу <ArrowRight size={18} />
           </a>
