@@ -2,7 +2,7 @@ import uuid
 from datetime import datetime, date
 
 from sqlalchemy import (
-    String, Text, Boolean, DateTime, Date,
+    String, Text, Boolean, DateTime, Date, Integer,
     ForeignKey, func
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
@@ -28,6 +28,7 @@ class Company(Base):
     owner = relationship("User", foreign_keys=[owner_id])
     departments = relationship("Department", back_populates="company", cascade="all, delete-orphan")
     employees = relationship("Employee", back_populates="company", cascade="all, delete-orphan")
+    positions = relationship("Position", back_populates="company", cascade="all, delete-orphan")
 
 
 class Department(Base):
@@ -46,6 +47,18 @@ class Department(Base):
     parent = relationship("Department", remote_side=[id], backref="children")
     employees = relationship("Employee", back_populates="department")
 
+class Position(Base):
+    __tablename__ = "positions"
+
+    id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
+    company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"))
+    title: Mapped[str] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(Text, nullable=True)
+    level: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    company = relationship("Company", back_populates="positions")
+    employees = relationship("Employee", back_populates="position")
+
 
 class Employee(Base):
     __tablename__ = "employees"
@@ -62,3 +75,4 @@ class Employee(Base):
     company = relationship("Company", back_populates="employees")
     department = relationship("Department", back_populates="employees")
     user = relationship("User", back_populates="employee")
+    position = relationship("Position", back_populates="employees")

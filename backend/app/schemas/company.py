@@ -87,3 +87,24 @@ class EmployeeResponse(BaseModel):
     user: UserResponse
 
     model_config = {"from_attributes": True}
+
+class PositionCreate(BaseModel):
+    title: str = Field(min_length=2, max_length=255)
+    description: Optional[str] = None
+    level: Optional[int] = Field(default=None, ge=1, le=5)
+
+
+class PositionUpdate(BaseModel):
+    title: Optional[str] = Field(default=None, min_length=2, max_length=255)
+    description: Optional[str] = None
+    level: Optional[int] = Field(default=None, ge=1, le=5)
+
+
+class PositionResponse(BaseModel):
+    id: uuid.UUID
+    company_id: uuid.UUID
+    title: str
+    description: Optional[str]
+    level: Optional[int]
+
+    model_config = {"from_attributes": True}
