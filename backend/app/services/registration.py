@@ -1,5 +1,7 @@
 from uuid import UUID
 from datetime import date
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.models.user import User
@@ -9,20 +11,8 @@ from app.core.security import get_password_hash
 
 class RegistrationService:
     @staticmethod
-    def register_company_with_owner(db: Session, company_data: dict, user_data: dict):
+    async def register_company_with_owner(db: Session, company_data: dict, user_data: dict):
         try:
-            company = Company(**company_data, is_active = True)
-            db.add(company)
-            db.flush()
-
-            management_dept = Department(
-                company_id = company.id,
-                name = 'руководство',
-                description = 'Административный отдел'
-            )
-            db.add(management_dept)
-            db.flush()
-
             user = User(
                 full_name=user_data['full_name'],
                 email=user_data['email'],
@@ -31,9 +21,26 @@ class RegistrationService:
                 is_active=True
             )
             db.add(user)
-            db.flush()
+            await db.flush()
 
-            company.owner_id = user.id
+            company = Company(
+                **company_data,
+                owner_id = user.id,
+                is_active=True
+            )
+
+            db.add(company)
+            await db.flush()
+
+            management_dept = Department(
+                company_id=company.id,
+                name='руководство',
+                description='Административный отдел'
+            )
+
+            db.add(management_dept)
+            await db.flush()
+
             owner_employee = Employee(
                 company_id=company.id,
                 user_id=user.id,
@@ -42,30 +49,40 @@ class RegistrationService:
                 hire_date=date.today(),
                 is_active=True
             )
-            db.add(owner_employee)
-            db.commit()
 
-            db.refresh(company)
-            db.refresh(user)
+            db.add(owner_employee)
+            await db.commit()
+
+            await db.refresh(company)
+            await db.refresh(user)
 
             return {'user': user, 'company': company}
 
         except IntegrityError as e:
-            db.rollback()
+            await db.rollback()
             if 'users.email' in str(e.orig) or 'ix_users_email' in str(e.orig):
                 raise ValueError('Пользователь с таким email уже существует')
             raise ValueError(f'Ошибка базы данных: {str(e)}')
 
 
     @staticmethod
-    def register_employee(db: Session, user_data: dict, company_id: UUID, department_id: UUID = None):
+    async def register_employee(db: AsyncSession, user_data: dict, company_id: UUID, department_id: UUID = None):
         try:
-            company = db.query(Company).filter(Company.id == company_id).first()
+            company_stmt = select(Company).where(Company.id == company_id)
+            company_result = await db.execute(company_stmt)
+            company = company_result.scalar_one_or_none()
+
             if not company:
                 raise ValueError('Компания не найдена')
 
             if department_id:
-                dept = db.query(Department).filter(Department.id == department_id, Department.company_id == company_id).first()
+                dept_stmt = select(Department).where(
+                    Department.id == department_id,
+                    Department.company_id == company_id
+                )
+                dept_result = await db.execute(dept_stmt)
+                dept = dept_result.scalar_one_or_none()
+
                 if not dept:
                     raise ValueError('Отдел не найден или не принадлежит этой компании')
 
@@ -77,7 +94,7 @@ class RegistrationService:
                 is_active=True
             )
             db.add(user)
-            db.flush()
+            await db.flush()
 
             employee_record = Employee(
                 company_id=company_id,
@@ -88,14 +105,14 @@ class RegistrationService:
                 is_active=True
             )
             db.add(employee_record)
-            db.commit()
 
-            db.refresh(user)
+            await db.commit()
+            await db.refresh(user)
 
             return {'user': user, 'company': company}
 
         except IntegrityError as e:
-            db.rollback()
+            await db.rollback()  # <-- ВАЖНО: добавлен await
             if 'users.email' in str(e.orig) or 'ix_users_email' in str(e.orig):
                 raise ValueError('Пользователь с таким email уже существует')
             raise ValueError(f'Ошибка базы данных: {str(e)}')

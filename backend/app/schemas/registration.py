@@ -1,6 +1,7 @@
 from typing import Optional
 from pydantic import BaseModel, field_validator, ConfigDict, EmailStr
 import re
+import uuid
 
 FORBIDDEN_PASSWORD_PATTERNS = [r'^1234567890',
                                r'^qwerty',
@@ -86,7 +87,7 @@ class EmployeeRegisterRequest(BaseModel):
 
 
 class UserResponse(BaseModel):
-    id: str
+    id: uuid.UUID
     email: str
     full_name: str
     role: str
@@ -94,7 +95,7 @@ class UserResponse(BaseModel):
 
 
 class CompanyResponse(BaseModel):
-    id: str
+    id: uuid.UUID
     name: str
     inn: Optional[str] = None
     model_config = ConfigDict(from_attributes=True)

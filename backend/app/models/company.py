@@ -24,7 +24,7 @@ class Company(Base):
         DateTime, default=func.now(), onupdate=func.now()
     )
 
-    owner_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    owner_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), nullable=False)
     owner = relationship("User", foreign_keys=[owner_id])
     departments = relationship("Department", back_populates="company", cascade="all, delete-orphan")
     employees = relationship("Employee", back_populates="company", cascade="all, delete-orphan")
@@ -67,6 +67,7 @@ class Employee(Base):
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"))
     department_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("departments.id"))
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
+    position_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("positions.id"), nullable=True)
     role: Mapped[str] = mapped_column(String(255))
     hire_date: Mapped[date] = mapped_column(Date)
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
