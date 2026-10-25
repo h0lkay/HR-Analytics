@@ -22,6 +22,12 @@ export interface AssignmentRow {
 const DEPARTMENTS_KEY = 'hr_dashboard_departments'
 const COURSES_KEY = 'hr_dashboard_courses'
 const ASSIGNMENTS_KEY = 'hr_dashboard_assignments'
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
+
+export function isDepartmentId(id: string) {
+  return UUID_PATTERN.test(id)
+}
 
 function readRecord(value: unknown) {
   if (!value || typeof value !== 'object') {
@@ -126,8 +132,17 @@ function writeList<T>(key: string, items: T[]) {
   }
 }
 
-export function loadDepartments(fallback: DepartmentRow[]) {
-  return readStored(DEPARTMENTS_KEY, toDepartment) ?? fallback
+export function loadDepartments(companyId: string | null) {
+  const stored = readStored(
+    companyId ? `${DEPARTMENTS_KEY}:${companyId}` : DEPARTMENTS_KEY,
+    toDepartment,
+  )
+
+  if (!stored) {
+    return []
+  }
+
+  return stored.filter((department) => isDepartmentId(department.id))
 }
 
 export function loadCourses(fallback: CourseRow[]) {
@@ -138,8 +153,14 @@ export function loadAssignments(fallback: AssignmentRow[]) {
   return readStored(ASSIGNMENTS_KEY, toAssignment) ?? fallback
 }
 
-export function saveDepartments(departments: DepartmentRow[]) {
-  writeList(DEPARTMENTS_KEY, departments)
+export function saveDepartments(
+  companyId: string | null,
+  departments: DepartmentRow[],
+) {
+  writeList(
+    companyId ? `${DEPARTMENTS_KEY}:${companyId}` : DEPARTMENTS_KEY,
+    departments,
+  )
 }
 
 export function saveCourses(courses: CourseRow[]) {
