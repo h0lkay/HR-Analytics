@@ -5,7 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from app.models.user import User
-from app.models.company import Company, Employee, Department
+from app.models.company import Company, Employee, Department, EmployeeDepartment
 from app.core.security import get_password_hash
 
 
@@ -44,13 +44,20 @@ class RegistrationService:
             owner_employee = Employee(
                 company_id=company.id,
                 user_id=user.id,
-                department_id=management_dept.id,
                 role='owner',
                 hire_date=date.today(),
                 is_active=True
             )
 
             db.add(owner_employee)
+            await db.flush()
+
+            emp_dept_link = EmployeeDepartment(
+                employee_id=owner_employee.id,
+                department_id=management_dept.id
+            )
+
+            db.add(emp_dept_link)
             await db.commit()
 
             await db.refresh(company)
@@ -99,12 +106,18 @@ class RegistrationService:
             employee_record = Employee(
                 company_id=company_id,
                 user_id=user.id,
-                department_id=department_id,
                 role='employee',
                 hire_date=date.today(),
                 is_active=True
             )
             db.add(employee_record)
+            await db.flush()
+
+            emp_dept_link = EmployeeDepartment(
+                employee_id=employee_record.id,
+                department_id=department_id
+            )
+            db.add(emp_dept_link)
 
             await db.commit()
             await db.refresh(user)
@@ -112,7 +125,7 @@ class RegistrationService:
             return {'user': user, 'company': company}
 
         except IntegrityError as e:
-            await db.rollback()  # <-- ВАЖНО: добавлен await
+            await db.rollback()
             if 'users.email' in str(e.orig) or 'ix_users_email' in str(e.orig):
                 raise ValueError('Пользователь с таким email уже существует')
             raise ValueError(f'Ошибка базы данных: {str(e)}')

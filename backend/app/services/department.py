@@ -1,7 +1,7 @@
 import uuid
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
-from app.models.company import Department, Employee
+from app.models.company import Department, Employee, EmployeeDepartment
 
 
 class DepartmentService:
@@ -48,15 +48,20 @@ class DepartmentService:
     async def delete_department(db: AsyncSession, department_id: uuid.UUID, company_id: uuid.UUID):
         stmt = select(Department).where(
             Department.id == department_id,
-            Department.company_id == company_id)
+            Department.company_id == company_id
+        )
         result = await db.execute(stmt)
         dept = result.scalar_one_or_none()
         if not dept:
             raise ValueError("Отдел не найден")
 
-        emp_stmt = select(Employee).where(
-            Employee.department_id == department_id,
-            Employee.is_active == True
+        emp_stmt = (
+            select(Employee)
+            .join(EmployeeDepartment, Employee.id == EmployeeDepartment.employee_id)
+            .where(
+                EmployeeDepartment.department_id == department_id,
+                Employee.is_active == True
+            )
         )
         emp_res = await db.execute(emp_stmt)
         if emp_res.scalars().first():

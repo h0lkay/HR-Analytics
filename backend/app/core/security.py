@@ -70,3 +70,26 @@ async def check_company_ownership(company_id: uuid.UUID, current_user: User = De
     if not company:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="У вас нет прав на управление этой компанией")
     return company
+
+
+async def check_owner_or_hr(company_id: uuid.UUID, current_user: User = Depends(get_current_user),
+                            db: AsyncSession = Depends(get_db)) -> User:
+    if current_user.role == "owner":
+        stmt = select(Company).where(Company.id == company_id, Company.owner_id == current_user.id)
+        if (await db.execute(stmt)).scalar_one_or_none():
+            return current_user
+
+    if current_user.role == "hr":
+        stmt = select(Employee).where(
+            Employee.user_id == current_user.id,
+            Employee.company_id == company_id,
+            Employee.role == "hr",
+            Employee.is_active == True
+        )
+        if (await db.execute(stmt)).scalar_one_or_none():
+            return current_user
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Недостаточно прав. Требуется роль Владельца или HR этой компании."
+    )

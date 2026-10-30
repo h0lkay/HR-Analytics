@@ -45,7 +45,8 @@ class Department(Base):
 
     company = relationship("Company", back_populates="departments")
     parent = relationship("Department", remote_side=[id], backref="children")
-    employees = relationship("Employee", back_populates="department")
+    employees = relationship("Employee", secondary="employee_departments", back_populates="departments")
+
 
 class Position(Base):
     __tablename__ = "positions"
@@ -65,7 +66,6 @@ class Employee(Base):
 
     id: Mapped[uuid.UUID] = mapped_column(primary_key=True, default=uuid.uuid4)
     company_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("companies.id"))
-    department_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("departments.id"))
     user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"))
     position_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("positions.id"), nullable=True)
     role: Mapped[str] = mapped_column(String(255))
@@ -74,6 +74,12 @@ class Employee(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime, default=func.now())
 
     company = relationship("Company", back_populates="employees")
-    department = relationship("Department", back_populates="employees")
+    departments = relationship("Department", secondary="employee_departments", back_populates="employees")
     user = relationship("User", back_populates="employee")
     position = relationship("Position", back_populates="employees")
+
+
+class EmployeeDepartment(Base):
+    __tablename__ = "employee_departments"
+    employee_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("employees.id"), primary_key=True)
+    department_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("departments.id"), primary_key=True)
